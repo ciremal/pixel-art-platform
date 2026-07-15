@@ -1,13 +1,53 @@
 .header {
+  height: 70px;
+
   display: flex;
   justify-content: center;
   align-items: center;
+
+  border-bottom: 1px solid #ccc;
 }
 
 .container {
-  width: 100%;
-  flex: 1 1 auto;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.sidebar {
+  flex: 1;
+  border: 1px solid #ccc;
+}
+
+.canvasArea {
+  flex: 4;
+
   display: flex;
   justify-content: center;
-  align-items: stretch;
+  align-items: center;
+
+  overflow: hidden;
+}
+
+.canvasContainer {
+  height: 100%;
+  aspect-ratio: 1;
+
+  max-width: 100%;
+}
+
+.canvasContainer canvas {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+}
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px;
+
+  text-align: center;
 }
