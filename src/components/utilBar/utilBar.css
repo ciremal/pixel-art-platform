@@ -1,0 +1,32 @@
+.utilBar {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  .color-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 1rem;
+    margin-top: 12px;
+  }
+  .color-input {
+    display: flex;
+    gap: 5px;
+    span {
+      font-size: large;
+    }
+    input {
+      width: 50px;
+      border-radius: 5px;
+      border: none;
+      font-size: medium;
+      padding: 2px 6px;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+}
