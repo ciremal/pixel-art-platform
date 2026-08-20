@@ -10,6 +10,15 @@ const App = () => {
   const [gridSize, setGridSize] = useState<GridSize>(DEFAULT_GRID_SIZE)
   const [pixels, setPixels] = useState(newCanvas(DEFAULT_GRID_SIZE))
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isDrawing = useRef(false)
+  const gridSizeRef = useRef(gridSize)
+  const drawCanvasRef = useRef<() => void>(() => {})
+  const lastPixelRef = useRef<{ X: number; Y: number } | null>(null)
+
+  // Update ref when gridSize changes for use in event handlers
+  useEffect(() => {
+    gridSizeRef.current = gridSize
+  }, [gridSize])
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -61,39 +70,76 @@ const App = () => {
     ctx.stroke()
   }, [pixels, gridSize])
 
+  // Update the ref whenever drawCanvas changes
+  useEffect(() => {
+    drawCanvasRef.current = drawCanvas
+  }, [drawCanvas])
+
+  useEffect(() => {
+    drawCanvas()
+  }, [drawCanvas])
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
     const resizeObserver = new ResizeObserver(() => {
-      drawCanvas()
+      drawCanvasRef.current()
     })
     resizeObserver.observe(canvas)
 
     const handleMouseDown = (event: MouseEvent) => {
+      isDrawing.current = true
       const rect = canvas.getBoundingClientRect()
       const { X, Y } = getSquare(
         rect.top,
         rect.bottom,
         rect.left,
         rect.right,
-        gridSize,
+        gridSizeRef.current,
         event.clientX,
         event.clientY
       )
-      updateCell(Y, X, "#0062ff", setPixels)
+      if (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) {
+        lastPixelRef.current = { X, Y }
+        updateCell(Y, X, "#0062ff", setPixels)
+      }
     }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isDrawing.current) return
+      const rect = canvas.getBoundingClientRect()
+      const { X, Y } = getSquare(
+        rect.top,
+        rect.bottom,
+        rect.left,
+        rect.right,
+        gridSizeRef.current,
+        event.clientX,
+        event.clientY
+      )
+      if (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) {
+        lastPixelRef.current = { X, Y }
+        updateCell(Y, X, "#0062ff", setPixels)
+      }
+    }
+
+    const handleMouseUp = () => {
+      isDrawing.current = false
+      lastPixelRef.current = null
+    }
+
     canvas.addEventListener("mousedown", handleMouseDown)
+    canvas.addEventListener("mousemove", handleMouseMove)
+    canvas.addEventListener("mouseup", handleMouseUp)
 
     return () => {
       resizeObserver.disconnect()
       canvas.removeEventListener("mousedown", handleMouseDown)
+      canvas.removeEventListener("mousemove", handleMouseMove)
+      canvas.removeEventListener("mouseup", handleMouseUp)
     }
-  }, [drawCanvas, gridSize])
-
-  useEffect(() => {
-    drawCanvas()
-  }, [drawCanvas])
+  }, [])
 
   return (
     <>
