@@ -161,6 +161,7 @@ const App = () => {
 
         <div className="sidebar">
           <UtilBar
+            gridSize={gridSize}
             setGridSize={setGridSize}
             setPixels={setPixels}
             color={color}
