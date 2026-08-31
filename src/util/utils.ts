@@ -4,11 +4,9 @@ import type { Color, GridSize } from "./types";
 export const updateCell = (
   rowIndex: number,
   colIndex: number,
-  newValue: Color,
-  setState: Dispatch<SetStateAction<string[][]>>,
+  color: Color,
+  setState: Dispatch<SetStateAction<Color[][]>>,
 ) => {
-  const { r, g, b, a } = newValue;
-  const color = `rgba(${r},${g},${b},${a})`;
   setState((prevState) =>
     prevState.map((row, rIdx) =>
       rIdx === rowIndex
@@ -37,6 +35,11 @@ export const getSquare = (
 
 export const newCanvas = (gridSize: GridSize) => {
   return Array.from({ length: gridSize }, () =>
-    new Array(gridSize).fill("#ffffff"),
+    new Array(gridSize).fill({ r: 255, g: 255, b: 255, a: 1 }),
   );
+};
+
+export const colorToString = (color: Color): string => {
+  const { r, g, b, a } = color;
+  return `rgba(${r},${g},${b},${a ?? 1})`;
 };

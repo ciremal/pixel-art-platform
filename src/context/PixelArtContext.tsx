@@ -13,8 +13,8 @@ import { newCanvas } from "../util/utils";
 type PixelArtContextValue = {
   gridSize: GridSize;
   setGridSize: Dispatch<SetStateAction<GridSize>>;
-  pixels: string[][];
-  setPixels: Dispatch<SetStateAction<string[][]>>;
+  pixels: Color[][];
+  setPixels: Dispatch<SetStateAction<Color[][]>>;
   color: Color;
   setColor: Dispatch<SetStateAction<Color>>;
   tool: ToolType;
@@ -25,7 +25,7 @@ const PixelArtContext = createContext<PixelArtContextValue | undefined>(undefine
 
 export const PixelArtProvider = ({ children }: { children: ReactNode }) => {
   const [gridSize, setGridSize] = useState<GridSize>(DEFAULT_GRID_SIZE);
-  const [pixels, setPixels] = useState<string[][]>(newCanvas(DEFAULT_GRID_SIZE));
+  const [pixels, setPixels] = useState<Color[][]>(newCanvas(DEFAULT_GRID_SIZE));
   const [color, setColor] = useState<Color>(DEFAULT_COLOR);
   const [tool, setTool] = useState<ToolType>(DEFAULT_TOOL);
 

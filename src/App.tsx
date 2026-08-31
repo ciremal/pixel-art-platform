@@ -3,25 +3,14 @@ import "./App.css";
 import ToolBar from "./components/toolBar/toolBar";
 import UtilBar from "./components/utilBar/utilBar";
 import { usePixelArt } from "./context/PixelArtContext";
-import { getSquare, updateCell } from "./util/utils";
+import { colorToString, getSquare, updateCell } from "./util/utils";
 
 const App = () => {
-  const { gridSize, pixels, setPixels, color } = usePixelArt();
+  const { gridSize, pixels, setPixels, color, setColor, tool } = usePixelArt();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gridSizeRef = useRef(gridSize);
-  const drawCanvasRef = useRef<() => void>(() => {});
-  const colorRef = useRef(color);
-  const isDrawing = useRef(false);
+  const isDrawingRef = useRef(false);
   const lastPixelRef = useRef<{ X: number; Y: number } | null>(null);
-
-  useEffect(() => {
-    gridSizeRef.current = gridSize;
-  }, [gridSize]);
-
-  useEffect(() => {
-    colorRef.current = color;
-  }, [color]);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -43,15 +32,13 @@ const App = () => {
 
     ctx.clearRect(0, 0, size, size);
 
-    // Draw pixels
     for (let y = 0; y < gridSize; y++) {
       for (let x = 0; x < gridSize; x++) {
-        ctx.fillStyle = pixels[y][x];
+        ctx.fillStyle = colorToString(pixels[y][x]);
         ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
       }
     }
 
-    // Draw grid
     ctx.beginPath();
     ctx.strokeStyle = "#767676";
 
@@ -66,12 +53,7 @@ const App = () => {
     }
 
     ctx.stroke();
-  }, [pixels, gridSize]);
-
-  // Update the ref whenever drawCanvas changes
-  useEffect(() => {
-    drawCanvasRef.current = drawCanvas;
-  }, [drawCanvas]);
+  }, [gridSize, pixels]);
 
   useEffect(() => {
     drawCanvas();
@@ -82,48 +64,67 @@ const App = () => {
     if (!canvas) return;
 
     const resizeObserver = new ResizeObserver(() => {
-      drawCanvasRef.current();
+      drawCanvas();
     });
     resizeObserver.observe(canvas);
 
     const handleMouseDown = (event: MouseEvent) => {
-      isDrawing.current = true;
+      isDrawingRef.current = true;
+
       const rect = canvas.getBoundingClientRect();
       const { X, Y } = getSquare(
         rect.top,
         rect.bottom,
         rect.left,
         rect.right,
-        gridSizeRef.current,
+        gridSize,
         event.clientX,
         event.clientY,
       );
-      if (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) {
-        lastPixelRef.current = { X, Y };
-        updateCell(Y, X, colorRef.current, setPixels);
+
+      switch (tool) {
+        case "pencil":
+          if (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) {
+            lastPixelRef.current = { X, Y };
+            updateCell(Y, X, color, setPixels);
+          }
+          break;
+        case "color-picker":
+          setColor(pixels[Y][X]);
+          break;
+        default:
+          break;
       }
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      if (!isDrawing.current) return;
+      if (!isDrawingRef.current) return;
+
       const rect = canvas.getBoundingClientRect();
       const { X, Y } = getSquare(
         rect.top,
         rect.bottom,
         rect.left,
         rect.right,
-        gridSizeRef.current,
+        gridSize,
         event.clientX,
         event.clientY,
       );
-      if (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) {
-        lastPixelRef.current = { X, Y };
-        updateCell(Y, X, colorRef.current, setPixels);
+
+      switch (tool) {
+        case "pencil":
+          if (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) {
+            lastPixelRef.current = { X, Y };
+            updateCell(Y, X, color, setPixels);
+          }
+          break;
+        default:
+          break;
       }
     };
 
     const handleMouseUp = () => {
-      isDrawing.current = false;
+      isDrawingRef.current = false;
       lastPixelRef.current = null;
     };
 
@@ -137,7 +138,7 @@ const App = () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
     };
-  }, []);
+  }, [color, drawCanvas, gridSize, setPixels, tool]);
 
   return (
     <>
