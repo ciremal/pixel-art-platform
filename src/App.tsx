@@ -1,18 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import "./App.css";
-import { type GridSize } from "./util/types";
 import ToolBar from "./components/toolBar/toolBar";
 import UtilBar from "./components/utilBar/utilBar";
-import { getSquare, newCanvas, updateCell } from "./util/utils";
-import { DEFAULT_COLOR, DEFAULT_GRID_SIZE } from "./util/constants";
+import { usePixelArt } from "./context/PixelArtContext";
+import { getSquare, updateCell } from "./util/utils";
 
 const App = () => {
-  const [gridSize, setGridSize] = useState<GridSize>(DEFAULT_GRID_SIZE);
-  const [pixels, setPixels] = useState(newCanvas(DEFAULT_GRID_SIZE));
-  const [color, setColor] = useState(DEFAULT_COLOR);
+  const { gridSize, pixels, setPixels, color } = usePixelArt();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-   const gridSizeRef = useRef(gridSize);
+  const gridSizeRef = useRef(gridSize);
   const drawCanvasRef = useRef<() => void>(() => {});
   const colorRef = useRef(color);
   const isDrawing = useRef(false);
@@ -160,13 +157,7 @@ const App = () => {
         </div>
 
         <div className="sidebar">
-          <UtilBar
-            gridSize={gridSize}
-            setGridSize={setGridSize}
-            setPixels={setPixels}
-            color={color}
-            setColor={setColor}
-          />
+          <UtilBar />
         </div>
       </div>
     </>

@@ -7,3 +7,5 @@ export type Color = {
     b: number,
     a: number
 }
+
+export type ToolType = 'pencil' | 'eraser' | 'paint-bucket' | 'line' | 'square' | 'circle' | 'color-picker'

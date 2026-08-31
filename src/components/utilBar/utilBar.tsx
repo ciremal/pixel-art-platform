@@ -1,26 +1,13 @@
-import { type Color, type GridSize } from "../../util/types";
-import { type Dispatch, type FC, type SetStateAction } from "react";
+import { type GridSize } from "../../util/types";
 import { newCanvas } from "../../util/utils";
 import { RgbaColorPicker } from "react-colorful";
 import "./utilBar.css";
 import Dropdown from "../Dropdown";
 import Stack from "../Stack";
+import { usePixelArt } from "../../context/PixelArtContext";
 
-type UtilBarProps = {
-  gridSize: GridSize;
-  setGridSize: (size: GridSize) => void;
-  setPixels: Dispatch<SetStateAction<string[][]>>;
-  color: Color;
-  setColor: Dispatch<SetStateAction<Color>>;
-};
-
-const UtilBar: FC<UtilBarProps> = ({
-  gridSize,
-  setGridSize,
-  setPixels,
-  color,
-  setColor,
-}) => {
+const UtilBar = () => {
+  const { gridSize, setGridSize, setPixels, color, setColor } = usePixelArt();
   const options = [
     { label: "12 x 12", value: "12" },
     { label: "16 x 16", value: "16" },
