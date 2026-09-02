@@ -3,7 +3,7 @@ import "./App.css";
 import ToolBar from "./components/toolBar/toolBar";
 import UtilBar from "./components/utilBar/utilBar";
 import { usePixelArt } from "./context/PixelArtContext";
-import { colorToString, getSquare, updateCell } from "./util/utils";
+import { bfsFill, colorToString, getSquare, updateCell } from "./util/utils";
 
 const App = () => {
   const { gridSize, pixels, setPixels, color, setColor, tool } = usePixelArt();
@@ -92,6 +92,11 @@ const App = () => {
         case "color-picker":
           setColor(pixels[Y][X]);
           break;
+        case "paint-bucket": {
+          const newPixels = bfsFill(X, Y, gridSize, pixels, color)
+          setPixels(newPixels)
+          break;
+        }
         default:
           break;
       }
