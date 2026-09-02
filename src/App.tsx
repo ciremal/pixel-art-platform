@@ -3,7 +3,15 @@ import "./App.css";
 import ToolBar from "./components/toolBar/toolBar";
 import UtilBar from "./components/utilBar/utilBar";
 import { usePixelArt } from "./context/PixelArtContext";
-import { bfsFill, colorToString, getSquare, updateCell } from "./util/utils";
+import { DEFAULT_COLOR } from "./util/constants";
+import {
+  bfsFill,
+  colorToString,
+  getNeutralCellColor,
+  getSquare,
+  isPainted,
+  updateCell,
+} from "./util/utils";
 
 const App = () => {
   const { gridSize, pixels, setPixels, color, setColor, tool } = usePixelArt();
@@ -34,7 +42,12 @@ const App = () => {
 
     for (let y = 0; y < gridSize; y++) {
       for (let x = 0; x < gridSize; x++) {
-        ctx.fillStyle = colorToString(pixels[y][x]);
+        const pixel = pixels[y][x];
+        ctx.fillStyle = isPainted(pixel)
+          ? colorToString(pixel)
+          : (x + y) % 2 === 0
+            ? "#ffffff"
+            : "#d9d9d9";
         ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
       }
     }
@@ -90,13 +103,21 @@ const App = () => {
           }
           break;
         case "color-picker":
-          setColor(pixels[Y][X]);
+          setColor(isPainted(pixels[Y][X]) ? pixels[Y][X] : DEFAULT_COLOR);
           break;
-        case "paint-bucket": {
-          const newPixels = bfsFill(X, Y, gridSize, pixels, color)
-          setPixels(newPixels)
+        case "paint-bucket":
+          const newPixels = bfsFill(X, Y, gridSize, pixels, color);
+          setPixels(newPixels);
           break;
-        }
+        case "eraser":
+          if (
+            (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) &&
+            isPainted(pixels[Y][X])
+          ) {
+            lastPixelRef.current = { X, Y };
+            updateCell(Y, X, getNeutralCellColor(X, Y), setPixels);
+          }
+          break;
         default:
           break;
       }
@@ -121,6 +142,15 @@ const App = () => {
           if (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) {
             lastPixelRef.current = { X, Y };
             updateCell(Y, X, color, setPixels);
+          }
+          break;
+        case "eraser":
+          if (
+            (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) &&
+            isPainted(pixels[Y][X])
+          ) {
+            lastPixelRef.current = { X, Y };
+            updateCell(Y, X, getNeutralCellColor(X, Y), setPixels);
           }
           break;
         default:

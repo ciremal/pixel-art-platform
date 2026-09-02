@@ -1,6 +1,26 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { Color, GridSize } from "./types";
-import { usePixelArt } from "../context/PixelArtContext";
+
+export const isPainted = (color: Color): boolean => color.a > 0;
+
+export const isSameColor = (left: Color, right: Color): boolean => {
+  return (
+    left.r === right.r &&
+    left.g === right.g &&
+    left.b === right.b &&
+    left.a === right.a
+  );
+};
+
+export const getNeutralCellColor = (x: number, y: number): Color => {
+  const isLight = (x + y) % 2 === 0;
+  return {
+    r: isLight ? 255 : 217,
+    g: isLight ? 255 : 217,
+    b: isLight ? 255 : 217,
+    a: 0,
+  };
+};
 
 export const updateCell = (
   rowIndex: number,
@@ -35,8 +55,8 @@ export const getSquare = (
 };
 
 export const newCanvas = (gridSize: GridSize) => {
-  return Array.from({ length: gridSize }, () =>
-    new Array(gridSize).fill({ r: 255, g: 255, b: 255, a: 1 }),
+  return Array.from({ length: gridSize }, (_, y) =>
+    Array.from({ length: gridSize }, (_, x) => getNeutralCellColor(x, y)),
   );
 };
 
@@ -53,11 +73,11 @@ export const bfsFill = (
   color: Color,
 ) => {
   const colorToFill = pixels[selectedY][selectedX];
-  if (colorToString(colorToFill) === colorToString(color)) {
+  if (isSameColor(colorToFill, color)) {
     return pixels;
   }
 
-  const newPixels = [...pixels];
+  const newPixels = pixels.map((row) => [...row]);
   const visited = new Set<string>();
   const queue: Array<{ X: number; Y: number }> = [];
 
@@ -70,9 +90,12 @@ export const bfsFill = (
     const { X, Y } = cell;
     if (X < 0 || X >= gridSize || Y < 0 || Y >= gridSize) continue;
     if (visited.has(`${X},${Y}`)) continue;
-    
+
     const currColor = newPixels[Y][X];
-    if (colorToString(currColor) === colorToString(colorToFill)) {
+    if (
+      isSameColor(currColor, colorToFill) ||
+      (!isPainted(currColor) && !isPainted(colorToFill))
+    ) {
       queue.push({ X: X + 1, Y });
       queue.push({ X: X - 1, Y });
       queue.push({ X, Y: Y + 1 });
