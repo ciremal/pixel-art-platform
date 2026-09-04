@@ -8,10 +8,12 @@ import {
   bfsFill,
   colorToString,
   getNeutralCellColor,
+  getSides,
   getSquare,
   isPainted,
   updateCell,
 } from "./util/utils";
+import type { Cell, Color } from "./util/types";
 
 const App = () => {
   const { gridSize, pixels, setPixels, color, setColor, tool } = usePixelArt();
@@ -19,6 +21,12 @@ const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const lastPixelRef = useRef<{ X: number; Y: number } | null>(null);
+
+  const previewShapeStartPixel = useRef<Cell>(null);
+  const previewShapeCurrPixel = useRef<Cell>(null);
+
+  const isLastPixel = (X: number, Y: number) =>
+    lastPixelRef.current?.X === X && lastPixelRef.current?.Y === Y;
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -48,7 +56,7 @@ const App = () => {
           : (x + y) % 2 === 0
             ? "#ffffff"
             : "#d9d9d9";
-        ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+        drawRect(x, y, pixelSize, ctx);
       }
     }
 
@@ -67,6 +75,50 @@ const App = () => {
 
     ctx.stroke();
   }, [gridSize, pixels]);
+
+  const drawPreview = (start: Cell, curr: Cell, color: Color) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const size = Math.min(rect.width, rect.height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const pixelSize = size / gridSize;
+    const { left, right, top, bottom } = getSides(
+      start.X,
+      curr.X,
+      start.Y,
+      curr.Y,
+    );
+    const boundedLeft = Math.max(0, left);
+    const boundedRight = Math.min(gridSize - 1, right);
+    const boundedTop = Math.max(0, top);
+    const boundedBottom = Math.min(gridSize - 1, bottom);
+
+    if (boundedLeft > boundedRight || boundedTop > boundedBottom) return;
+
+    ctx.fillStyle = colorToString(color);
+    for (let X = boundedLeft; X <= boundedRight; X++) {
+      drawRect(X, boundedTop, pixelSize, ctx);
+      drawRect(X, boundedBottom, pixelSize, ctx);
+    }
+
+    for (let Y = boundedTop; Y <= boundedBottom; Y++) {
+      drawRect(boundedLeft, Y, pixelSize, ctx);
+      drawRect(boundedRight, Y, pixelSize, ctx);
+    }
+  };
+
+  const drawRect = (
+    x: number,
+    y: number,
+    size: number,
+    ctx: CanvasRenderingContext2D,
+  ) => {
+    ctx.fillRect(x * size, y * size, size, size);
+  };
 
   useEffect(() => {
     drawCanvas();
@@ -97,10 +149,7 @@ const App = () => {
 
       switch (tool) {
         case "pencil":
-          if (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) {
-            lastPixelRef.current = { X, Y };
-            updateCell(Y, X, color, setPixels);
-          }
+          updateCell(Y, X, color, setPixels);
           break;
         case "color-picker":
           setColor(isPainted(pixels[Y][X]) ? pixels[Y][X] : DEFAULT_COLOR);
@@ -110,13 +159,14 @@ const App = () => {
           setPixels(newPixels);
           break;
         case "eraser":
-          if (
-            (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) &&
-            isPainted(pixels[Y][X])
-          ) {
-            lastPixelRef.current = { X, Y };
+          if (isPainted(pixels[Y][X])) {
             updateCell(Y, X, getNeutralCellColor(X, Y), setPixels);
           }
+          break;
+        case "square":
+          previewShapeStartPixel.current = { X, Y };
+          previewShapeCurrPixel.current = { X, Y };
+          drawPreview({ X, Y }, { X, Y }, color);
           break;
         default:
           break;
@@ -137,30 +187,57 @@ const App = () => {
         event.clientY,
       );
 
-      switch (tool) {
-        case "pencil":
-          if (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) {
-            lastPixelRef.current = { X, Y };
+      if (!isLastPixel(X, Y)) {
+        switch (tool) {
+          case "pencil":
             updateCell(Y, X, color, setPixels);
-          }
-          break;
-        case "eraser":
-          if (
-            (lastPixelRef.current?.X !== X || lastPixelRef.current?.Y !== Y) &&
-            isPainted(pixels[Y][X])
-          ) {
-            lastPixelRef.current = { X, Y };
-            updateCell(Y, X, getNeutralCellColor(X, Y), setPixels);
-          }
-          break;
-        default:
-          break;
+            break;
+          case "eraser":
+            if (isPainted(pixels[Y][X])) {
+              updateCell(Y, X, getNeutralCellColor(X, Y), setPixels);
+            }
+            break;
+          case "square":
+            if (previewShapeStartPixel.current) {
+              drawCanvas();
+              drawPreview(previewShapeStartPixel.current, { X, Y }, color);
+              previewShapeCurrPixel.current = { X, Y };
+            }
+            break;
+          default:
+            break;
+        }
+        lastPixelRef.current = { X, Y };
       }
     };
 
     const handleMouseUp = () => {
       isDrawingRef.current = false;
       lastPixelRef.current = null;
+      if (previewShapeStartPixel.current && previewShapeCurrPixel.current) {
+        const newPixels = [...pixels];
+
+        const { X: X1, Y: Y1 } = previewShapeStartPixel.current;
+        const { X: X2, Y: Y2 } = previewShapeCurrPixel.current;
+
+        const { left, right, top, bottom } = getSides(X1, X2, Y1, Y2);
+
+        for (let X = left; X <= right; X++) {
+          newPixels[Y1][X] = color;
+          newPixels[Y2][X] = color;
+        }
+
+        for (let Y = top; Y <= bottom; Y++) {
+          newPixels[Y][X1] = color;
+          newPixels[Y][X2] = color;
+        }
+
+        drawCanvas();
+        setPixels(newPixels);
+
+        previewShapeStartPixel.current = null
+        previewShapeCurrPixel.current = null
+      }
     };
 
     canvas.addEventListener("mousedown", handleMouseDown);
@@ -173,7 +250,7 @@ const App = () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [color, drawCanvas, gridSize, setPixels, tool]);
+  }, [color, drawCanvas, gridSize, setPixels, tool, drawPreview]);
 
   return (
     <>

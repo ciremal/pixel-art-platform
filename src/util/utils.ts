@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import type { Color, GridSize } from "./types";
+import type { Cell, Color, GridSize } from "./types";
 
 export const isPainted = (color: Color): boolean => color.a > 0;
 
@@ -45,7 +45,7 @@ export const getSquare = (
   gridSize: GridSize,
   clickX: number,
   clickY: number,
-) => {
+): Cell => {
   const size = Math.min(right - left, bottom - top);
   const pixelSize = size / gridSize;
   const X = Math.floor((clickX - left) / pixelSize);
@@ -79,7 +79,7 @@ export const bfsFill = (
 
   const newPixels = pixels.map((row) => [...row]);
   const visited = new Set<string>();
-  const queue: Array<{ X: number; Y: number }> = [];
+  const queue: Array<Cell> = [];
 
   queue.push({ X: selectedX, Y: selectedY });
 
@@ -106,4 +106,12 @@ export const bfsFill = (
     visited.add(`${X},${Y}`);
   }
   return newPixels;
+};
+
+export const getSides = (x1: number, x2: number, y1: number, y2: number) => {
+  const left = Math.min(x1, x2);
+  const right = Math.max(x1, x2);
+  const top = Math.min(y1, y2);
+  const bottom = Math.max(y1, y2);
+  return { left, right, top, bottom };
 };

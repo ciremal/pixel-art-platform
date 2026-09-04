@@ -6,7 +6,11 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
-import { DEFAULT_COLOR, DEFAULT_GRID_SIZE, DEFAULT_TOOL } from "../util/constants";
+import {
+  DEFAULT_COLOR,
+  DEFAULT_GRID_SIZE,
+  DEFAULT_TOOL,
+} from "../util/constants";
 import type { Color, GridSize, ToolType } from "../util/types";
 import { newCanvas } from "../util/utils";
 
@@ -21,7 +25,9 @@ type PixelArtContextValue = {
   setTool: Dispatch<SetStateAction<ToolType>>;
 };
 
-const PixelArtContext = createContext<PixelArtContextValue | undefined>(undefined);
+const PixelArtContext = createContext<PixelArtContextValue | undefined>(
+  undefined,
+);
 
 export const PixelArtProvider = ({ children }: { children: ReactNode }) => {
   const [gridSize, setGridSize] = useState<GridSize>(DEFAULT_GRID_SIZE);
@@ -37,11 +43,13 @@ export const PixelArtProvider = ({ children }: { children: ReactNode }) => {
     color,
     setColor,
     tool,
-    setTool,
+    setTool
   };
 
   return (
-    <PixelArtContext.Provider value={value}>{children}</PixelArtContext.Provider>
+    <PixelArtContext.Provider value={value}>
+      {children}
+    </PixelArtContext.Provider>
   );
 };
 
