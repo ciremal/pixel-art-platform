@@ -11,6 +11,7 @@ import {
   getSides,
   getSquare,
   isPainted,
+  getLinePoints,
   updateCell,
 } from "./util/utils";
 import type { Cell, Color } from "./util/types";
@@ -56,7 +57,7 @@ const App = () => {
           : (x + y) % 2 === 0
             ? "#ffffff"
             : "#d9d9d9";
-        drawRect(x, y, pixelSize, ctx);
+        drawPixel(x, y, pixelSize, ctx);
       }
     }
 
@@ -76,7 +77,7 @@ const App = () => {
     ctx.stroke();
   }, [gridSize, pixels]);
 
-  const drawPreview = (start: Cell, curr: Cell, color: Color) => {
+  const drawPreviewSquare = (start: Cell, curr: Cell, color: Color) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -101,17 +102,35 @@ const App = () => {
 
     ctx.fillStyle = colorToString(color);
     for (let X = boundedLeft; X <= boundedRight; X++) {
-      drawRect(X, boundedTop, pixelSize, ctx);
-      drawRect(X, boundedBottom, pixelSize, ctx);
+      drawPixel(X, boundedTop, pixelSize, ctx);
+      drawPixel(X, boundedBottom, pixelSize, ctx);
     }
 
     for (let Y = boundedTop; Y <= boundedBottom; Y++) {
-      drawRect(boundedLeft, Y, pixelSize, ctx);
-      drawRect(boundedRight, Y, pixelSize, ctx);
+      drawPixel(boundedLeft, Y, pixelSize, ctx);
+      drawPixel(boundedRight, Y, pixelSize, ctx);
     }
   };
 
-  const drawRect = (
+  const drawPreviewLine = (start: Cell, curr: Cell, color: Color) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const size = Math.min(rect.width, rect.height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const pixelSize = size / gridSize;
+    const linePoints = getLinePoints(start.X, start.Y, curr.X, curr.Y);
+
+    ctx.fillStyle = colorToString(color);
+    linePoints.forEach((point) => {
+      drawPixel(point.x, point.y, pixelSize, ctx);
+    });
+  };
+
+  const drawPixel = (
     x: number,
     y: number,
     size: number,
@@ -166,7 +185,12 @@ const App = () => {
         case "square":
           previewShapeStartPixel.current = { X, Y };
           previewShapeCurrPixel.current = { X, Y };
-          drawPreview({ X, Y }, { X, Y }, color);
+          drawPreviewSquare({ X, Y }, { X, Y }, color);
+          break;
+        case "line":
+          previewShapeStartPixel.current = { X, Y };
+          previewShapeCurrPixel.current = { X, Y };
+          drawPreviewLine({ X, Y }, { X, Y }, color);
           break;
         default:
           break;
@@ -200,7 +224,18 @@ const App = () => {
           case "square":
             if (previewShapeStartPixel.current) {
               drawCanvas();
-              drawPreview(previewShapeStartPixel.current, { X, Y }, color);
+              drawPreviewSquare(
+                previewShapeStartPixel.current,
+                { X, Y },
+                color,
+              );
+              previewShapeCurrPixel.current = { X, Y };
+            }
+            break;
+          case "line":
+            if (previewShapeStartPixel.current) {
+              drawCanvas();
+              drawPreviewLine(previewShapeStartPixel.current, { X, Y }, color);
               previewShapeCurrPixel.current = { X, Y };
             }
             break;
@@ -220,23 +255,30 @@ const App = () => {
         const { X: X1, Y: Y1 } = previewShapeStartPixel.current;
         const { X: X2, Y: Y2 } = previewShapeCurrPixel.current;
 
-        const { left, right, top, bottom } = getSides(X1, X2, Y1, Y2);
+        if (tool === "square") {
+          const { left, right, top, bottom } = getSides(X1, X2, Y1, Y2);
 
-        for (let X = left; X <= right; X++) {
-          newPixels[Y1][X] = color;
-          newPixels[Y2][X] = color;
-        }
+          for (let X = left; X <= right; X++) {
+            newPixels[Y1][X] = color;
+            newPixels[Y2][X] = color;
+          }
 
-        for (let Y = top; Y <= bottom; Y++) {
-          newPixels[Y][X1] = color;
-          newPixels[Y][X2] = color;
+          for (let Y = top; Y <= bottom; Y++) {
+            newPixels[Y][X1] = color;
+            newPixels[Y][X2] = color;
+          }
+        } else if (tool === "line") {
+          const linePoints = getLinePoints(X1, Y1, X2, Y2);
+          linePoints.forEach((point) => {
+            newPixels[point.y][point.x] = color
+          });
         }
 
         drawCanvas();
         setPixels(newPixels);
 
-        previewShapeStartPixel.current = null
-        previewShapeCurrPixel.current = null
+        previewShapeStartPixel.current = null;
+        previewShapeCurrPixel.current = null;
       }
     };
 
@@ -250,7 +292,15 @@ const App = () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [color, drawCanvas, gridSize, setPixels, tool, drawPreview]);
+  }, [
+    color,
+    drawCanvas,
+    gridSize,
+    setPixels,
+    tool,
+    drawPreviewSquare,
+    drawPreviewLine,
+  ]);
 
   return (
     <>

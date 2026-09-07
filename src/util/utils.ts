@@ -115,3 +115,31 @@ export const getSides = (x1: number, x2: number, y1: number, y2: number) => {
   const bottom = Math.max(y1, y2);
   return { left, right, top, bottom };
 };
+
+export const getLinePoints = (x1: number, y1: number, x2: number, y2: number) => {
+  const dx = Math.abs(x2 - x1);
+  const dy = Math.abs(y2 - y1);
+  const sx = Math.sign(x2 - x1);
+  const sy = Math.sign(y2 - y1);
+  let err = dx - dy;
+
+  const values = [];
+
+  while (true) {
+    values.push({ x: x1, y: y1 });
+
+    if (x1 === x2 && y1 === y2) break;
+
+    const e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      x1 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y1 += sy;
+    }
+  }
+
+  return values
+};
