@@ -80,12 +80,12 @@ export const bfsFill = (
   const newPixels = pixels.map((row) => [...row]);
   const visited = new Set<string>();
   const queue: Array<Cell> = [];
+  let queueIndex = 0;
 
   queue.push({ X: selectedX, Y: selectedY });
 
-  while (queue.length > 0) {
-    const cell = queue.shift();
-    if (!cell) continue;
+  while (queueIndex < queue.length) {
+    const cell = queue[queueIndex++];
 
     const { X, Y } = cell;
     if (X < 0 || X >= gridSize || Y < 0 || Y >= gridSize) continue;
