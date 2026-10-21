@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import ToolBar from "./components/toolBar/toolBar";
 import UtilBar from "./components/utilBar/utilBar";
 import { usePixelArt } from "./context/PixelArtContext";
+import useUndo from "./hooks/useUndo";
 import { DEFAULT_COLOR } from "./util/constants";
 import {
   drawCanvas,
@@ -18,10 +19,13 @@ import {
   getLinePoints,
   updateCell,
 } from "./util/utils";
-import type { Cell } from "./util/types";
+import type { Cell, Color } from "./util/types";
 
 const App = () => {
   const { gridSize, pixels, setPixels, color, setColor, tool } = usePixelArt();
+  const [history, setHistory] = useState<Color[][][]>([]);
+
+  useUndo(history, setHistory, setPixels);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -89,6 +93,10 @@ const App = () => {
           break;
         default:
           break;
+      }
+
+      if (tool !== "color-picker") {
+        setHistory((prev) => [...prev, pixels]);
       }
     };
 
@@ -173,7 +181,7 @@ const App = () => {
         } else if (tool === "line") {
           const linePoints = getLinePoints(X1, Y1, X2, Y2);
           linePoints.forEach((point) => {
-            newPixels[point.y][point.x] = color
+            newPixels[point.y][point.x] = color;
           });
         }
 
@@ -195,14 +203,7 @@ const App = () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [
-    color,
-    gridSize,
-    pixels,
-    setColor,
-    setPixels,
-    tool,
-  ]);
+  }, [color, gridSize, pixels, setColor, setPixels, tool]);
 
   return (
     <>
