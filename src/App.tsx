@@ -7,6 +7,7 @@ import useUndo from "./hooks/useUndo";
 import { DEFAULT_COLOR } from "./util/constants";
 import {
   drawCanvas,
+  drawPreviewCircle,
   drawPreviewLine,
   drawPreviewSquare,
 } from "./util/canvasUtils";
@@ -18,6 +19,7 @@ import {
   isPainted,
   getLinePoints,
   updateCell,
+  getCircle,
 } from "./util/utils";
 import type { Cell, Color } from "./util/types";
 
@@ -91,6 +93,11 @@ const App = () => {
           previewShapeCurrPixel.current = { X, Y };
           drawPreviewLine(canvas, gridSize, { X, Y }, { X, Y }, color);
           break;
+        case "circle":
+          previewShapeStartPixel.current = { X, Y };
+          previewShapeCurrPixel.current = { X, Y };
+          drawPreviewCircle(canvas, gridSize, { X, Y }, { X, Y }, color);
+          break;
         default:
           break;
       }
@@ -150,6 +157,19 @@ const App = () => {
               previewShapeCurrPixel.current = { X, Y };
             }
             break;
+          case "circle":
+            if (previewShapeStartPixel.current) {
+              drawCanvas(canvas, gridSize, pixels);
+              drawPreviewCircle(
+                canvas,
+                gridSize,
+                previewShapeStartPixel.current,
+                { X, Y },
+                color,
+              );
+              previewShapeCurrPixel.current = { X, Y };
+            }
+            break;
           default:
             break;
         }
@@ -181,6 +201,11 @@ const App = () => {
         } else if (tool === "line") {
           const linePoints = getLinePoints(X1, Y1, X2, Y2);
           linePoints.forEach((point) => {
+            newPixels[point.y][point.x] = color;
+          });
+        } else if (tool === "circle") {
+          const circlePoints = getCircle(X1, Y1, X2, Y2);
+          circlePoints.forEach((point) => {
             newPixels[point.y][point.x] = color;
           });
         }
